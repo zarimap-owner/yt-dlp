@@ -21,19 +21,31 @@ jobs:
         with:
           python-version: '3.x'
 
+      # 1. JavaScriptランタイム(Deno)をセットアップ
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
       - name: Install FFmpeg & yt-dlp
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
           python -m pip install --upgrade pip
-          pip install yt-dlp
+          pip install --upgrade "yt-dlp[default]"
 
       - name: Create output directory
         run: mkdir -p downloads
 
+      # 2. extractor-args オプションを追加してBot判定を回避
       - name: Download Video
         run: |
-          yt-dlp -v -f "bestvideo+bestaudio/best" --merge-output-format mp4 -o "downloads/%(title)s.%(ext)s" "${{ github.event.inputs.video_url }}"
+          yt-dlp \
+            --extractor-args "youtube:player_client=mweb,android,web" \
+            -f "bestvideo+bestaudio/best" \
+            --merge-output-format mp4 \
+            -o "downloads/%(title)s.%(ext)s" \
+            "${{ github.event.inputs.video_url }}"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
